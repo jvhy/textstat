@@ -1,12 +1,16 @@
 import warnings
 import re
 import math
+import spacy
 from collections import Counter
 from typing import Union, List, Set
 
 import pkg_resources
 from functools import lru_cache
 from pyphen import Pyphen
+
+# Initialize spacy model used for lemmatization
+nlp = spacy.load("en_core_web_sm", disable = ['parser','ner'])
 
 langs = {
     "en": {  # Default config
@@ -946,9 +950,11 @@ class textstatistics:
             DESCRIPTION.
 
         """
-        words = set(re.findall(r"[\w\='‘’]+", text.lower()))
-        diff_words = [word for word in words
-                      if self.is_difficult_word(word, syllable_threshold)]
+        doc = nlp(text)
+        lemmas = set(token.lemma_.lower() for token in doc if not token.is_punct and token.lemma_.lower() != '-pron-')
+        diff_words = [lemma for lemma in lemmas
+                      if self.is_difficult_word(lemma, syllable_threshold)]
+
         return diff_words
 
     @lru_cache(maxsize=128)
